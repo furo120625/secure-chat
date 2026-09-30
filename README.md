@@ -1,479 +1,247 @@
-# Secure Chat
+1. Yêu cầu hệ thống
 
-## 1. Giới thiệu
+Trước khi bắt đầu, máy tính cần cài:
 
-Secure Chat là ứng dụng web chat bảo mật được phát triển và chạy trên
-máy local. Hiện tại dự án **chưa deploy lên web**.
+Git
+Node.js
+MySQL
+Một trình soạn thảo code, khuyến nghị Visual Studio Code
+Kiểm tra Git
 
-Công nghệ chính:
+Mở Terminal hoặc PowerShell:
 
--   Node.js
--   Express.js
--   MySQL
--   HTML, CSS, JavaScript
--   Web Crypto API
--   IndexedDB
--   `express-session`
--   Argon2
--   `mysql2`
+git --version
 
-Cơ chế mã hóa tin nhắn hiện tại sử dụng X25519, HKDF-SHA-256 và AES-GCM
-256-bit. Đây là mô hình E2EE phục vụ mục đích học tập/dự án cá nhân,
-chưa phải một triển khai Signal Protocol hoàn chỉnh.
+Nếu Git đã được cài đặt, Terminal sẽ hiển thị phiên bản, ví dụ:
 
-------------------------------------------------------------------------
-
-## 2. Yêu cầu
-
-Cần cài:
-
--   Node.js
--   MySQL
--   Trình duyệt hiện đại hỗ trợ Web Crypto API và IndexedDB
-
-Phiên bản Node.js đã dùng để phát triển:
-
-``` text
-Node.js v24.18.0
-```
-
-Kiểm tra:
-
-``` bash
+git version 2.x.x
+Kiểm tra Node.js
 node -v
+
+và:
+
 npm -v
+
+Nếu cả hai lệnh đều trả về phiên bản thì Node.js đã được cài đặt.
+
+Kiểm tra MySQL
+
+Có thể sử dụng MySQL Server kết hợp với MySQL Workbench.
+
+Kiểm tra MySQL:
+
 mysql --version
-```
+2. Tải project từ GitHub
 
-------------------------------------------------------------------------
+Clone repository:
 
-## 3. Cấu trúc project
-
-Backend chạy từ thư mục `server`:
-
-``` text
-secure-chat/
-└── server/
-    ├── src/
-    │   ├── server.js
-    │   ├── config/
-    │   │   └── database.js
-    │   ├── controllers/
-    │   │   ├── authController.js
-    │   │   ├── userController.js
-    │   │   ├── friendshipController.js
-    │   │   └── keyController.js
-    │   └── ...
-    ├── .env
-    ├── package.json
-    └── ...
-```
-
-Frontend được Express cung cấp cùng ứng dụng. Các JavaScript mã hóa được
-load theo thứ tự:
-
-``` text
-keyManager.js
-encryption.js
-decryption.js
-app.js
-```
-
-------------------------------------------------------------------------
-
-## 4. Cài đặt lần đầu
-
-Clone project:
-
-``` bash
 git clone https://github.com/furo120625/secure-chat.git
+
+Sau khi clone xong, di chuyển vào thư mục project:
+
 cd secure-chat
-cd server
-```
 
-Nếu project đã có sẵn trên máy, chỉ cần mở terminal tại thư mục
-`server`.
+Nếu sử dụng Visual Studio Code:
 
-Cài dependencies:
+code .
+3. Cài đặt các package
 
-``` bash
+Trong thư mục project, chạy:
+
 npm install
-```
 
-------------------------------------------------------------------------
+Lệnh này sẽ đọc file package.json và cài đặt toàn bộ dependency cần thiết.
 
-## 5. Cấu hình MySQL
+Sau khi hoàn thành, thư mục node_modules sẽ được tạo.
 
-Đảm bảo MySQL đang chạy và database của project đã tồn tại.
+Không cần đưa node_modules lên GitHub. Mỗi máy chỉ cần chạy npm install một lần sau khi clone project.
 
-Kiểm tra:
+4. Cài đặt và khởi động MySQL
 
-``` bash
-mysql -u root -p
-```
+Secure Chat sử dụng MySQL để lưu trữ dữ liệu.
+
+Mở MySQL Workbench hoặc MySQL Command Line Client.
+
+Tạo database:
+
+CREATE DATABASE secure_chat;
 
 Sau đó:
 
-``` sql
-SHOW DATABASES;
-```
+USE secure_chat;
+5. Tạo các bảng trong database
 
-Tên database phải khớp với cấu hình trong `.env`.
+Project cần các bảng database để lưu thông tin người dùng, quan hệ bạn bè, khóa công khai và các dữ liệu liên quan.
 
-------------------------------------------------------------------------
-
-## 6. Tạo file `.env`
-
-Trong thư mục `server`, tạo:
-
-``` text
-.env
-```
+Nếu project có file SQL được cung cấp, hãy mở file SQL đó trong MySQL Workbench và chạy toàn bộ nội dung.
 
 Ví dụ:
 
-``` env
+database/
+└── schema.sql
+
+Trong MySQL Workbench:
+
+Mở file schema.sql.
+Chọn database secure_chat.
+Chạy toàn bộ câu lệnh SQL.
+Kiểm tra phần Tables để đảm bảo các bảng đã được tạo.
+
+Không tự tạo bảng theo tên trong hướng dẫn này nếu repository đã cung cấp schema.sql. Hãy sử dụng schema đi kèm project để đảm bảo cấu trúc database đúng với source code hiện tại.
+
+6. Tạo file .env
+
+Project sử dụng biến môi trường để lưu thông tin kết nối database và các secret của server.
+
+Trong thư mục server/project, tạo file:
+
+.env
+
+Ví dụ:
+
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_mysql_password
-DB_NAME=your_database_name
+DB_NAME=secure_chat
 
+SESSION_SECRET=your_session_secret
 PORT=3000
+Giải thích
+Biến	Ý nghĩa
+DB_HOST	Địa chỉ MySQL
+DB_USER	Tài khoản MySQL
+DB_PASSWORD	Mật khẩu MySQL
+DB_NAME	Tên database
+SESSION_SECRET	Secret dùng cho session
+PORT	Port của Node.js server
 
-SESSION_SECRET=your_long_random_session_secret
-```
+Nếu MySQL chạy trên máy local thì thông thường:
 
-Ý nghĩa:
+DB_HOST=localhost
 
-  Biến               Ý nghĩa
-  ------------------ -------------------------
-  `DB_HOST`          Địa chỉ MySQL
-  `DB_USER`          Tài khoản MySQL
-  `DB_PASSWORD`      Mật khẩu MySQL
-  `DB_NAME`          Database của project
-  `PORT`             Port Express server
-  `SESSION_SECRET`   Secret dùng cho session
+Nếu tài khoản MySQL là root:
 
-**Không commit `.env` lên GitHub.**
+DB_USER=root
 
-Thêm:
-
-``` text
-.env
-```
-
-vào `.gitignore`.
-
-------------------------------------------------------------------------
-
-## 7. Chạy server local
-
-Từ thư mục `server`:
-
-``` bash
-node src/server.js
-```
-
-Server chạy tại:
-
-``` text
-http://localhost:3000
-```
-
-Nếu cấu hình đúng, terminal sẽ có thông báo tương tự:
-
-``` text
-Server running at http://localhost:3000
-MySQL connected successfully!
-```
-
-------------------------------------------------------------------------
-
-## 8. Mở ứng dụng
-
-Mở trình duyệt:
-
-``` text
-http://localhost:3000
-```
-
-Không mở `index.html` bằng `file:///...`.
-
-Ứng dụng cần Express server để frontend gọi các API và sử dụng session
-cookie.
-
-Một số API chính:
-
-``` text
-/api/auth/login
-/api/auth/register
-/api/auth/me
-/api/users/:id
-/api/friendships
-/api/friendships/requests
-/api/conversations
-/api/messages
-/api/keys/public/:userId
-/api/keys/private
-```
-
-------------------------------------------------------------------------
-
-## 9. Đăng ký và đăng nhập
-
-Từ trang Login chọn:
-
-``` text
-Create account
-```
-
-Nhập:
-
-``` text
-Username
-Email
-Password
-Confirm password
-```
-
-Mỗi tài khoản có một User ID dạng UUID duy nhất.
+DB_PASSWORD phải là mật khẩu MySQL của máy bạn.
 
 Ví dụ:
 
-``` text
-949750a7-4a03-4eb9-98ba-9107fe53094f
-```
+DB_PASSWORD=123456
 
-Sau khi đăng ký, đăng nhập bằng email và password.
+Không sử dụng nguyên mật khẩu của người khác.
 
-Backend sử dụng session thông qua HTTP-only cookie.
+7. Không đưa .env lên GitHub
 
-------------------------------------------------------------------------
+File .env chứa thông tin nhạy cảm nên không được commit lên GitHub.
 
-## 10. Key và E2EE
+File .gitignore nên có:
 
-Frontend tạo hoặc khôi phục key pair cho user.
+node_modules/
+.env
 
-Luồng tổng quát:
+Mỗi người clone project sẽ tự tạo .env của riêng mình.
 
-``` text
-Login
-  ↓
-Key Manager
-  ↓
-Kiểm tra IndexedDB
-  ↓
-Có key?
- ├── Có → sử dụng key
- └── Không
-      ↓
-   Kiểm tra backup trên server
-      ↓
-   Khôi phục key
-      ↓
-   Lưu lại IndexedDB
-```
+Có thể tạo thêm:
 
-Public key được lưu trên server.
+.env.example
 
-Private key không được lưu trực tiếp dưới dạng plaintext. Private key
-được mã hóa trước khi backup bằng cơ chế dựa trên password của user.
+Ví dụ:
 
-Tin nhắn được mã hóa ở browser trước khi gửi server.
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=secure_chat
 
-Luồng gửi message:
+SESSION_SECRET=
+PORT=3000
 
-``` text
-Plaintext
-   ↓
-Encrypt
-   ↓
-Ciphertext
-   ↓
-POST /api/messages
-   ↓
-MySQL
-```
+File .env.example có thể đưa lên GitHub vì nó không chứa password thật.
 
-------------------------------------------------------------------------
+8. Khởi động server
 
-## 11. Chạy project mỗi ngày
+Sau khi:
 
-Sau khi đã cài đặt lần đầu:
+Clone project
+Chạy npm install
+Cài MySQL
+Tạo database
+Import database schema
+Tạo .env
 
-### Bước 1
+hãy khởi động server:
 
-Khởi động MySQL.
+npm start
 
-### Bước 2
+Hoặc sử dụng command được định nghĩa trong package.json.
 
-Mở terminal:
+Nếu project sử dụng:
 
-``` bash
-cd path o\secure-chat\server
-```
-
-### Bước 3
-
-Chạy:
-
-``` bash
 node src/server.js
-```
 
-### Bước 4
+thì có thể chạy trực tiếp:
 
-Mở:
-
-``` text
-http://localhost:3000
-```
-
-------------------------------------------------------------------------
-
-## 12. Xử lý lỗi thường gặp
-
-### Node.js không được nhận diện
-
-``` bash
-node -v
-```
-
-Nếu không có version, cài Node.js rồi mở lại terminal.
-
-### Dependencies bị thiếu
-
-``` bash
-npm install
-```
-
-### MySQL không kết nối
-
-Kiểm tra:
-
-``` text
-DB_HOST
-DB_USER
-DB_PASSWORD
-DB_NAME
-```
-
-và đảm bảo MySQL đang chạy.
-
-### `Access denied`
-
-Kiểm tra username/password MySQL trong `.env`.
-
-### Database không tồn tại
-
-Kiểm tra:
-
-``` sql
-SHOW DATABASES;
-```
-
-### Server không chạy được ở port 3000
-
-Kiểm tra xem port `3000` có đang được process khác sử dụng hay không.
-
-### `/api/auth/me` trả về chưa authenticated
-
-Kiểm tra:
-
-1.  Server có đang chạy không.
-2.  Login có thành công không.
-3.  Browser có nhận session cookie không.
-4.  Có đang truy cập `http://localhost:3000` thay vì mở file HTML trực
-    tiếp không.
-
-------------------------------------------------------------------------
-
-## 13. Lưu ý khi test E2EE
-
-Không nên xóa IndexedDB hoặc private key trong khi đang kiểm thử.
-
-Browser mới hoặc Incognito có thể được dùng để mô phỏng một thiết
-bị/browser chưa có dữ liệu local.
-
-Các message cũ được tạo trước khi format lưu `self_ciphertext`,
-`self_nonce` và `self_public_key` có thể không tương thích với cơ chế
-giải mã hiện tại.
-
-Không nên xóa private key nếu vẫn cần giải mã dữ liệu đã mã hóa bằng key
-đó.
-
-------------------------------------------------------------------------
-
-## 14. Quy tắc local development
-
--   Không commit `.env`.
--   Không lưu plaintext password vào database.
--   Không đưa password vào source code.
--   Không log password ra terminal.
--   Không commit private key plaintext.
--   Sau khi thay đổi backend, restart Node.js server.
--   Sau khi thay đổi frontend, refresh browser.
--   Không dùng cấu hình local một cách máy móc khi deploy production.
-
-------------------------------------------------------------------------
-
-## 15. Kiến trúc hiện tại
-
-``` text
-Browser
-   │
-   │ HTTP
-   ↓
-Express Server
-   │
-   ├── Authentication
-   ├── Users
-   ├── Friendships
-   ├── Conversations
-   ├── Messages
-   └── Key Backup
-   │
-   ↓
-MySQL
-```
-
-Mã hóa message diễn ra ở browser trước khi ciphertext được gửi lên
-server.
-
-------------------------------------------------------------------------
-
-## 16. Trạng thái dự án
-
-``` text
-Environment: Local development
-URL: http://localhost:3000
-Deployment: Chưa triển khai
-Backend: Node.js + Express
-Database: MySQL
-Authentication: Session + Argon2
-Encryption: X25519 + HKDF-SHA-256 + AES-GCM
-Client storage: IndexedDB
-Frontend: HTML + CSS + JavaScript
-```
-
-------------------------------------------------------------------------
-
-## Quick Start
-
-Nếu project đã được cấu hình đầy đủ:
-
-``` bash
-cd secure-chat\server
-npm install
 node src/server.js
-```
 
-Sau đó mở:
+Nếu server khởi động thành công, Terminal sẽ hiển thị thông báo tương tự:
 
-``` text
+Server is running on port 3000
+MySQL connected
+9. Mở ứng dụng
+
+Mở trình duyệt và truy cập:
+
 http://localhost:3000
-```
 
-Deployment sẽ được thực hiện ở giai đoạn sau, sau khi frontend, backend,
-database, authentication, E2EE, responsive UI và security configuration
-được hoàn thiện.
+Nếu frontend được chạy bằng một server riêng, hãy sử dụng port được cấu hình cho frontend.
+
+10. Tạo tài khoản
+
+Sau khi mở ứng dụng:
+
+Chọn Create Account/Register.
+Nhập username.
+Nhập email nếu được yêu cầu.
+Nhập password.
+Đăng ký tài khoản.
+
+Thông tin tài khoản sẽ được lưu vào database MySQL local của máy.
+
+11. Đăng nhập
+
+Sau khi tạo tài khoản:
+
+Quay lại trang Login.
+Nhập username/email và password.
+Đăng nhập.
+
+Nếu đăng nhập thành công, server sẽ tạo session cho người dùng.
+
+12. User ID
+
+Mỗi tài khoản có một User ID riêng.
+
+User ID được sử dụng để xác định chính xác người dùng khi gửi lời mời kết bạn.
+
+Ví dụ:
+
+Username: example
+Email: example@gmail.com
+User ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+Có thể sử dụng User ID của người khác để tìm kiếm và gửi lời mời kết bạn.
+
+13. Kết bạn
+
+Để gửi lời mời kết bạn:
+
+Đăng nhập tài khoản.
+Nhập User ID của người muốn kết bạn.
+Gửi Friend Request.
+
+Người nhận có thể:
+
+Accept
+Reject
+
+Sau khi chấp nhận, hai tài khoản sẽ trở thành bạn bè.
